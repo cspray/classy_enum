@@ -7,6 +7,7 @@ ActiveRecord::Schema.define(:version => 1) do
     t.string :color
     t.string :name
     t.integer :age
+    t.text :settings
   end
 
   create_table :cats, :force => true do |t|
@@ -42,6 +43,8 @@ class Dog < ActiveRecord::Base; end
 
 class DefaultDog < Dog
   classy_enum_attr :breed
+  store :settings, accessors: [:my_breed]
+  classy_enum_attr :my_breed, class_name: 'Breed', allow_blank: true, coder: JSON
 end
 
 class AllowBlankBreedDog < Dog
@@ -81,6 +84,16 @@ describe DefaultDog do
     it 'has an error on :breed' do
       subject.valid?
       subject.errors[:breed].size.should eql(1)
+    end
+  end
+
+  context "using store" do
+    subject { DefaultDog.new(:breed => :golden_retriever, :my_breed => :snoop) }
+    its(:my_breed) { should be_a(Breed::Snoop) }
+    it 'persists value' do
+      subject.save!
+      subject.reload
+      subject.my_breed.should be_a(Breed::Snoop)
     end
   end
 end
